@@ -37,8 +37,9 @@ class AppVersion {
         } else {
           if (_info.localVersion.compareTo(minVersion) < 0) {
             _info = _info._copyWith(status: AppVersionStatus.shouldUpdate);
+          } else {
+            _info = _info._copyWith(status: AppVersionStatus.canUpdate);
           }
-          _info = _info._copyWith(status: AppVersionStatus.canUpdate);
         }
       }
     }
