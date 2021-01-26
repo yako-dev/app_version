@@ -36,7 +36,7 @@ class AppVersion {
           _info = _info._copyWith(status: AppVersionStatus.canUpdate);
         } else {
           if (_info.localVersion.compareTo(minVersion) < 0) {
-            _info = _info._copyWith(status: AppVersionStatus.shouldUpdate);
+            _info = _info._copyWith(status: AppVersionStatus.haveToUpdate);
           } else {
             _info = _info._copyWith(status: AppVersionStatus.canUpdate);
           }

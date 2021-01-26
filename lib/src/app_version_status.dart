@@ -1,5 +1,5 @@
 enum AppVersionStatus {
   latest,
   canUpdate,
-  shouldUpdate,
+  haveToUpdate,
 }
