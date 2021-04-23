@@ -1,13 +1,13 @@
 part of 'app_version.dart';
 
 class AppVersionInfo {
-  final Version localVersion;
+  final Version? localVersion;
 
-  final Version storeVersion;
+  final Version? storeVersion;
 
-  final String appStoreLink;
+  final String? appStoreLink;
 
-  final AppVersionStatus status;
+  final AppVersionStatus? status;
 
   AppVersionInfo({
     this.localVersion,
@@ -17,10 +17,10 @@ class AppVersionInfo {
   });
 
   AppVersionInfo _copyWith({
-    Version localVersion,
-    Version storeVersion,
-    String appStoreLink,
-    AppVersionStatus status,
+    Version? localVersion,
+    Version? storeVersion,
+    String? appStoreLink,
+    AppVersionStatus? status,
   }) {
     return AppVersionInfo(
       localVersion: localVersion ?? this.localVersion,
