@@ -28,18 +28,17 @@ class AppVersion {
 
   Future<AppVersionInfo?> calculateInfo() async {
     await _calculateVersionInfo();
-    if (_info!.storeVersion != null) {
-      if (_info!.localVersion!.compareTo(_info!.storeVersion) >= 0) {
-        _info = _info!._copyWith(status: AppVersionStatus.latest);
+    if (_info!.storeVersion != null &&
+        _info!.localVersion!.compareTo(_info!.storeVersion) >= 0) {
+      _info = _info!._copyWith(status: AppVersionStatus.latest);
+    } else {
+      if (minVersion == null) {
+        _info = _info!._copyWith(status: AppVersionStatus.canUpdate);
       } else {
-        if (minVersion == null) {
-          _info = _info!._copyWith(status: AppVersionStatus.canUpdate);
+        if (_info!.localVersion!.compareTo(minVersion) < 0) {
+          _info = _info!._copyWith(status: AppVersionStatus.haveToUpdate);
         } else {
-          if (_info!.localVersion!.compareTo(minVersion) < 0) {
-            _info = _info!._copyWith(status: AppVersionStatus.haveToUpdate);
-          } else {
-            _info = _info!._copyWith(status: AppVersionStatus.canUpdate);
-          }
+          _info = _info!._copyWith(status: AppVersionStatus.canUpdate);
         }
       }
     }
