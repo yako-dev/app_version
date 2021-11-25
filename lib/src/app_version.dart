@@ -46,73 +46,77 @@ class AppVersion {
     return _info;
   }
 
+  bool get _isAndroid => Platform.isAndroid;
+
   Future<void> _calculateVersionInfo() async {
     String? packageName;
     try {
       final PackageInfo packageInfo = await PackageInfo.fromPlatform();
       _info = AppVersionInfo(localVersion: Version.parse(packageInfo.version));
 
-      if (Platform.isAndroid) {
+      if (_isAndroid) {
         packageName = androidPackageName ?? packageInfo.packageName;
-        await _getAndroidStoreVersion(packageName);
       } else if (Platform.isIOS) {
         packageName = iosPackageName ?? packageInfo.packageName;
-        await _getIosStoreVersion(packageName);
-      } else {
-        print('This target platform is not yet supported by this package.');
       }
+      await _getStoreVersion(packageName!);
     } catch (e) {
       print(_getErrorText(packageName));
       _resetInfo();
     }
   }
 
-  Future<void> _getIosStoreVersion(String packageName) async {
-    final url = 'https://itunes.apple.com/lookup?bundleId=$packageName';
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode != 200) {
-      print(_getErrorText(packageName));
-      _resetInfo();
-      return;
-    }
-    final responseJson = jsonDecode(response.body);
-    if (responseJson['results']?.isEmpty ?? true) {
-      print(_getErrorText(packageName));
-      return;
-    }
+  Future<void> _getStoreVersion(String packageName) async {
+    try {
+      final url = _isAndroid
+          ? 'https://play.google.com/store/apps/details?id=$packageName'
+          : 'https://itunes.apple.com/lookup?bundleId=$packageName';
+      final response = await http.get(Uri.parse(url)).timeout(
+            const Duration(seconds: 4),
+          );
+      if (response.statusCode != 200) {
+        print(_getErrorText(packageName));
+        _resetInfo();
+        return;
+      }
+      if (_isAndroid) {
+        final Document document = parse(response.body);
+        final List<Element> elements = document.getElementsByClassName('hAyfc');
+        final versionElement = elements.firstWhere(
+          (elm) => elm.querySelector('.BgcNfc')!.text == 'Current Version',
+        );
 
-    _info = _info!._copyWith(
-      storeVersion: Version.parse(responseJson['results'][0]['version']),
-      appStoreLink: responseJson['results'][0]['trackViewUrl'],
-    );
-  }
+        _info = _info!._copyWith(
+          storeVersion:
+              Version.parse(versionElement.querySelector('.htlgb')!.text),
+          appStoreLink: url,
+        );
+      } else {
+        final responseJson = jsonDecode(response.body);
+        if (responseJson['results']?.isEmpty ?? true) {
+          print(_getErrorText(packageName));
+          return;
+        }
 
-  Future<void> _getAndroidStoreVersion(String? packageName) async {
-    final url = 'https://play.google.com/store/apps/details?id=$packageName';
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode != 200) {
-      print(_getErrorText(packageName));
-      _resetInfo();
-      return;
+        _info = _info!._copyWith(
+          storeVersion: Version.parse(responseJson['results'][0]['version']),
+          appStoreLink: responseJson['results'][0]['trackViewUrl'],
+        );
+      }
+    } catch (e) {
+      print(
+        'Failed to lookup an ${_isAndroid ? 'Android' : 'iOS'} store app '
+        'version: ${e.toString()}',
+      );
     }
-    final Document document = parse(response.body);
-    final List<Element> elements = document.getElementsByClassName('hAyfc');
-    final versionElement = elements.firstWhere(
-      (elm) => elm.querySelector('.BgcNfc')!.text == 'Current Version',
-    );
-
-    _info = _info!._copyWith(
-      storeVersion: Version.parse(versionElement.querySelector('.htlgb')!.text),
-      appStoreLink: url,
-    );
   }
 
   String _getErrorText(String? packageName) {
-    String storeName;
-    if (Platform.isIOS) {
-      storeName = 'App Store';
-    } else {
+    late final String storeName;
+    if (_isAndroid) {
       storeName = 'Google Play Store';
+    } else {
+      storeName = 'App Store';
     }
     return 'Could not find an app with provided package name in the $storeName';
   }
